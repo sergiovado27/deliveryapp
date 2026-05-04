@@ -3,5 +3,6 @@
 @tailwind utilities;
 
 body {
-  background: #f9fafb;
+  font-family: var(--font-poppins), sans-serif;
+  @apply antialiased;
 }
