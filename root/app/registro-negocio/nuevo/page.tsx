@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase"; // Asegúrate de tener este archivo creado
+import { supabase } from "@/lib/supabase"; // Base de Datos
 import Link from "next/link";
 
 const DEPARTAMENTOS_NI = [

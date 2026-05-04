@@ -8,7 +8,7 @@ export default function Home() {
         {/* Header */}
         <header className="flex justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
           <div>
-            <h1 className="text-xl font-bold text-gray-800">FatDelivery</h1>
+            <h1 className="text-xl font-bold text-gray-800">MonchoXpress</h1>
             <p className="text-xs text-orange-500 font-semibold">Panel Superadmin</p>
           </div>
           <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center text-orange-600 font-bold border-2 border-white shadow-sm">
@@ -18,11 +18,19 @@ export default function Home() {
 
         {/* Sección de Bienvenida */}
         <section className="space-y-4">
-          <div className="bg-orange-500 p-6 rounded-[2rem] text-white shadow-lg shadow-orange-200 relative overflow-hidden">
+          <div className="bg-orange-500 p-6 rounded-[2rem] text-white shadow-lg shadow-orange-200 relative overflow-hidden flex justify-between items-center">
             <div className="relative z-10">
               <h2 className="text-2xl font-bold">Hola, Sergio</h2>
               <p className="text-orange-100 text-sm mt-1">¿Qué vamos a gestionar hoy?</p>
             </div>
+
+            {/* Elementos del Clima */}
+            <div className="relative z-10 text-right">
+              <span className="text-3xl block">☁️</span>
+              <p className="text-[10px] font-bold uppercase opacity-90">Nublado</p>
+              <p className="text-xl font-bold">32°C</p>
+            </div>
+
             {/* Decoración abstracta para que no sea solo un color plano */}
             <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-orange-400 rounded-full opacity-50"></div>
           </div>
@@ -45,8 +53,8 @@ export default function Home() {
             <div className="flex items-center gap-4">
               <span className="text-2xl bg-gray-800 p-2 rounded-xl">🛵</span>
               <div className="text-left">
-                <p className="text-base">Agregar FatRider</p>
-                <p className="text-gray-400 text-[10px] font-normal uppercase tracking-wider">Nuevo ingreso</p>
+                <p className="text-base">Gestionar FatRiders</p>
+                <p className="text-gray-400 text-[10px] font-normal uppercase tracking-wider">Dar de Alta • Editar • Dar de Baja</p>
               </div>
             </div>
             <span className="text-xl text-orange-500">→</span>

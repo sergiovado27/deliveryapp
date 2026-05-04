@@ -1,0 +1,263 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { supabase } from "@/lib/supabase"; 
+
+const DEPARTAMENTOS_NI = [
+  "Boaco", "Carazo", "Chinandega", "Chontales", "Estelí", "Granada", 
+  "Jinotega", "León", "Madriz", "Managua", "Masaya", "Matagalpa", 
+  "Nueva Segovia", "Río San Juan", "Rivas", "RACCN", "RACCS"
+];
+
+const ESTADOS_US = [
+  "Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado", "Connecticut", "Delaware", "Florida", "Georgia", 
+  "Hawaii", "Idaho", "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana", "Maine", "Maryland", 
+  "Massachusetts", "Michigan", "Minnesota", "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada", "New Hampshire", "New Jersey", 
+  "New Mexico", "New York", "North Carolina", "North Dakota", "Ohio", "Oklahoma", "Oregon", "Pennsylvania", "Rhode Island", "South Carolina", 
+  "South Dakota", "Tennessee", "Texas", "Utah", "Vermont", "Virginia", "Washington", "West Virginia", "Wisconsin", "Wyoming"
+];
+
+const PAISES_WHATSAPP = [
+  { nombre: "Nicaragua", prefijo: "+505", bandera: "🇳🇮", digitos: 8 },
+  { nombre: "Honduras", prefijo: "+504", bandera: "🇭🇳", digitos: 8 },
+  { nombre: "Costa Rica", prefijo: "+506", bandera: "🇨🇷", digitos: 8 },
+  { nombre: "Estados Unidos", prefijo: "+1", bandera: "🇺🇸", digitos: 10 },
+  { nombre: "España", prefijo: "+34", bandera: "🇪🇸", digitos: 9 },
+];
+
+export default function RegistroRider() {
+  const [formData, setFormData] = useState({
+    primerNombre: "",
+    segundoNombre: "",
+    primerApellido: "",
+    segundoApellido: "",
+    cedula: "",
+    fechaNacimiento: "",
+    paisNacimiento: "Nicaragua",
+    lugarNacimiento: "",
+    direccion: "",
+    telefono: "",
+    whatsapp: "",
+    nacionalidad: "Nicaragüense",
+  });
+
+  const [edad, setEdad] = useState<number | null>(null);
+  const [mismoWhatsapp, setMismoWhatsapp] = useState(false);
+  const [cargando, setCargando] = useState(false);
+  const [banderaActual, setBanderaActual] = useState("");
+
+  useEffect(() => {
+    if (formData.fechaNacimiento) {
+      const birthDate = new Date(formData.fechaNacimiento);
+      const today = new Date();
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const m = today.getMonth() - birthDate.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
+      setEdad(age);
+    }
+  }, [formData.fechaNacimiento]);
+
+  useEffect(() => {
+    if (mismoWhatsapp) {
+      const prefijo = formData.paisNacimiento === "Nicaragua" ? "+505" : "+1";
+      setFormData((prev) => ({ ...prev, whatsapp: prefijo + prev.telefono }));
+    }
+  }, [mismoWhatsapp, formData.telefono, formData.paisNacimiento]);
+
+  useEffect(() => {
+    const encontrado = PAISES_WHATSAPP.find(p => formData.whatsapp.startsWith(p.prefijo));
+    setBanderaActual(encontrado ? encontrado.bandera : "");
+  }, [formData.whatsapp]);
+
+  // CORRECCIÓN DE CÉDULA NICARAGÜENSE
+  const handleCedula = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.toUpperCase().replace(/[^0-9A-Z]/g, "");
+    
+    // Si es Nicaragua, validamos la estructura de 14 caracteres + letra
+    if (formData.paisNacimiento === "Nicaragua") {
+        if (value.length <= 14) {
+            setFormData({ ...formData, cedula: value });
+        }
+    } else {
+        // Para otros países (EE.UU.), permitimos más flexibilidad o formato ID
+        setFormData({ ...formData, cedula: value });
+    }
+  };
+
+  const handleTelefono = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, "");
+    const limite = formData.paisNacimiento === "Nicaragua" ? 8 : 10;
+    if (value.length <= limite) {
+      setFormData({ ...formData, telefono: value });
+    }
+  };
+
+  const handleWhatsappManual = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value;
+    if (!value.startsWith("+")) value = "+" + value.replace(/\D/g, "");
+    else value = "+" + value.slice(1).replace(/\D/g, "");
+    
+    if (value.length <= 25) {
+      setFormData({ ...formData, whatsapp: value });
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (edad !== null && edad < 12) return;
+
+    const limiteTel = formData.paisNacimiento === "Nicaragua" ? 8 : 10;
+    if (formData.telefono.length !== limiteTel) {
+      alert(`El teléfono debe tener ${limiteTel} dígitos.`);
+      return;
+    }
+
+    setCargando(true);
+    try {
+      const { error } = await supabase.from('fat_riders').insert([{
+        first_name: formData.primerNombre,
+        second_name: formData.segundoNombre,
+        last_name: formData.primerApellido,
+        second_last_name: formData.segundoApellido,
+        cedula: formData.cedula,
+        birth_date: formData.fechaNacimiento,
+        birth_place: `${formData.lugarNacimiento}, ${formData.paisNacimiento}`,
+        address: formData.direccion,
+        phone: formData.telefono,
+        whatsapp: formData.whatsapp,
+        nationality: formData.nacionalidad,
+      }]);
+      if (error) throw error;
+      alert("¡Registro guardado!");
+      window.location.reload();
+    } catch (error: any) {
+      alert("Error: " + error.message);
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  return (
+    <main className="min-h-screen bg-gray-50 p-4 pb-10">
+      <div className="max-w-[450px] mx-auto space-y-6">
+        <header className="flex items-center gap-4">
+          <Link href="/" className="bg-white p-2 rounded-xl shadow-sm border border-gray-100">
+            <span className="text-xl">←</span>
+          </Link>
+          <h1 className="text-xl font-bold text-gray-800">Nuevo FatRider</h1>
+        </header>
+
+        {edad !== null && edad < 12 && (
+          <div className="bg-red-100 border-l-4 border-red-500 p-4 rounded-xl">
+            <p className="text-sm text-red-700 font-bold">⚠️ Edad mínima: 12 años.</p>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4 bg-white p-6 rounded-[2.5rem] shadow-sm border border-gray-100">
+          <div className="grid grid-cols-2 gap-4 text-left">
+            <div>
+              <label className="text-[10px] font-bold uppercase text-gray-400 ml-2">Primer Nombre *</label>
+              <input required className="bg-gray-50 border-none rounded-2xl p-3 text-sm w-full" type="text" value={formData.primerNombre} onChange={(e) => setFormData({...formData, primerNombre: e.target.value})} />
+            </div>
+            <div>
+              <label className="text-[10px] font-bold uppercase text-gray-400 ml-2">Segundo Nombre</label>
+              <input className="bg-gray-50 border-none rounded-2xl p-3 text-sm w-full" type="text" value={formData.segundoNombre} onChange={(e) => setFormData({...formData, segundoNombre: e.target.value})} />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 text-left">
+            <div>
+              <label className="text-[10px] font-bold uppercase text-gray-400 ml-2">Primer Apellido *</label>
+              <input required className="bg-gray-50 border-none rounded-2xl p-3 text-sm w-full" type="text" value={formData.primerApellido} onChange={(e) => setFormData({...formData, primerApellido: e.target.value})} />
+            </div>
+            <div>
+              <label className="text-[10px] font-bold uppercase text-gray-400 ml-2">Segundo Apellido</label>
+              <input className="bg-gray-50 border-none rounded-2xl p-3 text-sm w-full" type="text" value={formData.segundoApellido} onChange={(e) => setFormData({...formData, segundoApellido: e.target.value})} />
+            </div>
+          </div>
+
+          <div className="text-left">
+            <label className="text-[10px] font-bold uppercase text-gray-400 ml-2">Número de Cédula *</label>
+            <input 
+                required 
+                value={formData.cedula} 
+                onChange={handleCedula} 
+                className="bg-gray-50 border-none rounded-2xl p-3 text-sm font-mono tracking-widest w-full" 
+                type="text" 
+                placeholder={formData.paisNacimiento === "Nicaragua" ? "0000000000000A" : "ID Number"} 
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 text-left">
+            <div>
+              <label className="text-[10px] font-bold uppercase text-gray-400 ml-2">Fecha Nac. *</label>
+              <input required className="bg-gray-50 border-none rounded-2xl p-3 text-sm w-full" type="date" value={formData.fechaNacimiento} onChange={(e) => setFormData({...formData, fechaNacimiento: e.target.value})} />
+            </div>
+            <div>
+              <label className="text-[10px] font-bold uppercase text-gray-400 ml-2">Edad</label>
+              <div className="bg-orange-50 text-orange-600 rounded-2xl p-3 text-sm text-center font-bold">
+                {edad !== null ? `${edad} años` : "--"}
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 text-left">
+            <div>
+              <label className="text-[10px] font-bold uppercase text-gray-400 ml-2">País Nac. *</label>
+              <select required className="bg-gray-50 border-none rounded-2xl p-3 text-sm w-full" value={formData.paisNacimiento} onChange={(e) => setFormData({...formData, paisNacimiento: e.target.value})}>
+                <option value="Nicaragua">Nicaragua</option>
+                <option value="Estados Unidos">Estados Unidos</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-[10px] font-bold uppercase text-gray-400 ml-2">Lugar *</label>
+              <select required className="bg-gray-50 border-none rounded-2xl p-3 text-sm w-full" value={formData.lugarNacimiento} onChange={(e) => setFormData({...formData, lugarNacimiento: e.target.value})}>
+                <option value="">Seleccione...</option>
+                {formData.paisNacimiento === "Nicaragua" ? DEPARTAMENTOS_NI.map(d => <option key={d} value={d}>{d}</option>) : ESTADOS_US.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div className="text-left">
+            <label className="text-[10px] font-bold uppercase text-gray-400 ml-2">Dirección *</label>
+            <textarea required className="bg-gray-50 border-none rounded-2xl p-3 text-sm h-20 w-full" value={formData.direccion} onChange={(e) => setFormData({...formData, direccion: e.target.value})} />
+          </div>
+
+          <div className="space-y-3 text-left">
+            <div>
+              <label className="text-[10px] font-bold uppercase text-gray-400 ml-2">Teléfono ({formData.paisNacimiento}) *</label>
+              <input required value={formData.telefono} onChange={handleTelefono} className="bg-gray-50 border-none rounded-2xl p-3 text-sm w-full" type="tel" placeholder={formData.paisNacimiento === "Nicaragua" ? "8 dígitos" : "10 dígitos"} />
+            </div>
+
+            <label className="flex items-center gap-2 ml-2 cursor-pointer">
+              <input type="checkbox" className="rounded border-gray-300 text-orange-500" checked={mismoWhatsapp} onChange={(e) => setMismoWhatsapp(e.target.checked)} />
+              <span className="text-[11px] text-gray-500 font-medium">Usar mismo número para WhatsApp</span>
+            </label>
+
+            <div className="relative">
+              <label className="text-[10px] font-bold uppercase text-gray-400 ml-2">WhatsApp</label>
+              <div className="flex items-center gap-2">
+                <input 
+                  disabled={mismoWhatsapp} 
+                  value={formData.whatsapp} 
+                  onChange={handleWhatsappManual} 
+                  className={`bg-gray-50 border-none rounded-2xl p-3 text-sm flex-1 ${mismoWhatsapp ? 'opacity-60' : ''}`} 
+                  type="text" 
+                  placeholder="+505..."
+                />
+                <span className="text-2xl bg-white p-1 rounded-lg shadow-sm border border-gray-100 min-w-[40px] text-center">
+                  {banderaActual || "🌐"}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" disabled={cargando || (edad !== null && edad < 12)} className="w-full bg-orange-500 text-white font-bold py-4 rounded-2xl mt-4 shadow-lg active:scale-95 transition-all disabled:bg-gray-300">
+            {cargando ? "Guardando..." : "Guardar FatRider"}
+          </button>
+        </form>
+      </div>
+    </main>
+  );
+}
