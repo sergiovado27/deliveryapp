@@ -1,45 +1,51 @@
 "use client";
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
-export default function ActionMenu({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
-  if (!isOpen) return null;
+export default function PedidosPage() {
+  const router = useRouter();
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm transition-opacity" onClick={onClose}>
-      {/* Contenedor del Menú */}
-      <div 
-        className="w-full max-w-[500px] bg-white rounded-t-[2.5rem] p-8 pb-12 animate-in slide-in-from-bottom duration-300"
-        onClick={(e) => e.stopPropagation()} // Evita que se cierre al tocar dentro
-      >
-        {/* Barra gris decorativa de arriba */}
-        <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-8" />
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
+      {/* Contenedor Principal (Ya no es un modal, es la página) */}
+      <div className="w-full max-w-[400px] bg-white rounded-[2.5rem] p-8 shadow-sm border border-gray-100">
+        
+        {/* Barra decorativa */}
+        <div className="w-12 h-1.5 bg-gray-100 rounded-full mx-auto mb-8" />
 
-        <h2 className="text-xl font-black italic uppercase text-gray-900 mb-6 text-center">Gestión de Pedidos</h2>
+        <h2 className="text-xl font-black italic uppercase text-gray-900 mb-8 text-center tracking-tighter">
+          Gestión de Pedidos
+        </h2>
 
         <div className="grid gap-4">
           {/* OPCIÓN 1: NUEVO */}
-          <Link href="/pedidos/nuevo" className="flex items-center gap-4 p-4 bg-orange-50 rounded-2xl border border-orange-100 active:scale-95 transition-transform">
-            <div className="w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center text-xl">➕</div>
+          <Link href="/pedidos/nuevo" className="flex items-center gap-4 p-5 bg-orange-50 rounded-3xl border border-orange-100 active:scale-95 transition-all group">
+            <div className="w-14 h-14 bg-orange-500 rounded-2xl flex items-center justify-center text-2xl shadow-lg shadow-orange-200 group-hover:rotate-12 transition-transform">
+              ➕
+            </div>
             <div className="text-left">
-              <p className="font-black italic uppercase text-orange-900 text-sm">Crear Pedido</p>
-              <p className="text-xs text-orange-700/70 font-bold">Registrar nuevo encargo</p>
+              <p className="font-black italic uppercase text-orange-900 text-sm leading-none">Crear Pedido</p>
+              <p className="text-[10px] text-orange-700/60 font-bold uppercase mt-1 tracking-wider">Registrar nuevo encargo</p>
             </div>
           </Link>
 
           {/* OPCIÓN 2: SEGUIMIENTO */}
-          <Link href="/pedidos/seguimiento" className="flex items-center gap-4 p-4 bg-gray-900 rounded-2xl active:scale-95 transition-transform">
-            <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center text-xl text-white">📋</div>
+          <Link href="/pedidos/seguimiento" className="flex items-center gap-4 p-5 bg-gray-900 rounded-3xl active:scale-95 transition-all group shadow-xl shadow-gray-200">
+            <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center text-2xl text-white group-hover:-rotate-12 transition-transform">
+              📋
+            </div>
             <div className="text-left">
-              <p className="font-black italic uppercase text-white text-sm">Ver Pedidos</p>
-              <p className="text-xs text-gray-400 font-bold">Panel de seguimiento</p>
+              <p className="font-black italic uppercase text-white text-sm leading-none">Ver Pedidos</p>
+              <p className="text-[10px] text-gray-400 font-bold uppercase mt-1 tracking-wider">Panel de seguimiento</p>
             </div>
           </Link>
 
+          {/* BOTÓN VOLVER */}
           <button 
-            onClick={onClose}
-            className="mt-4 w-full py-4 text-sm font-black uppercase text-gray-400 hover:text-gray-600"
+            onClick={() => router.back()}
+            className="mt-6 w-full py-4 text-[10px] font-black uppercase text-gray-400 hover:text-gray-600 tracking-[0.2em] transition-colors"
           >
-            Cancelar
+            ← Volver al inicio
           </button>
         </div>
       </div>
