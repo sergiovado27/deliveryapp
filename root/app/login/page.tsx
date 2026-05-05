@@ -35,7 +35,7 @@ export default function LoginPage() {
       .single();
 
     if (profile?.role === 'superadmin') router.push('/admin');
-    else if (profile?.role === 'rider') router.push('/rider/dashboard');
+    else if (profile?.role === 'rider') router.push('/rider');
     else if (profile?.role === 'vendor') router.push('/vendor/dashboard');
     
     setLoading(false);
