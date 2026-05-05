@@ -6,8 +6,9 @@ import { useRouter } from 'next/navigation';
 export default function VendorDashboard() {
   const [user, setUser] = useState<any>(null);
   const [clima, setClima] = useState({ temp: "--", desc: "Cargando...", icono: "⏳" });
-  // Nuevo estado para guardar la cantidad de productos
   const [totalArticulos, setTotalArticulos] = useState<number>(0);
+  // Estado para órdenes pendientes de asignación
+  const [ordenesPendientes, setOrdenesPendientes] = useState<number>(0);
   const router = useRouter();
 
   // --- LÓGICA DEL CLIMA ---
@@ -39,15 +40,28 @@ export default function VendorDashboard() {
     }
   }, []);
 
-  // --- NUEVA FUNCIÓN PARA CONTAR ARTÍCULOS ---
+  // --- CONTEO DE ARTÍCULOS ---
   const fetchTotalArticulos = useCallback(async (businessId: string) => {
     const { count, error } = await supabase
-      .from('menu_items') // Usamos tu tabla existente
+      .from('menu_items')
       .select('*', { count: 'exact', head: true })
-      .eq('business_id', businessId); // Filtramos por el negocio
+      .eq('business_id', businessId);
 
     if (!error && count !== null) {
       setTotalArticulos(count);
+    }
+  }, []);
+
+  // --- NUEVA FUNCIÓN: CONTEO DE ÓRDENES SIN RIDER ---
+  const fetchOrdenesPendientes = useCallback(async () => {
+    const { count, error } = await supabase
+      .from('fat_pedidos')
+      .select('*', { count: 'exact', head: true })
+      .is('rider_id', null)
+      .not('status', 'in', '("entregado","cancelado")');
+
+    if (!error && count !== null) {
+      setOrdenesPendientes(count);
     }
   }, []);
 
@@ -57,23 +71,28 @@ export default function VendorDashboard() {
       if (authUser) {
         const { data: profile } = await supabase
           .from('profiles')
-          .select('*') // Aquí cargará business_name y business_id
+          .select('*')
           .eq('id', authUser.id)
           .single();
         
         setUser(profile);
 
-        // Si el perfil ya tiene un business_id, cargamos el conteo
         if (profile?.business_id) {
           fetchTotalArticulos(profile.business_id);
         }
+        // Cargamos las órdenes actuales
+        fetchOrdenesPendientes();
       }
       fetchClima();
     };
+
     loadData();
-    const interval = setInterval(fetchClima, 120000);
+    const interval = setInterval(() => {
+      fetchClima();
+      fetchOrdenesPendientes(); // Actualiza el contador cada 2 min
+    }, 120000);
     return () => clearInterval(interval);
-  }, [fetchClima, fetchTotalArticulos]);
+  }, [fetchClima, fetchTotalArticulos, fetchOrdenesPendientes]);
 
   return (
     <main className="min-h-screen bg-gray-50 flex flex-col items-center p-4">
@@ -82,7 +101,7 @@ export default function VendorDashboard() {
         {/* Header con Nombre de Negocio y Propietario */}
         <header className="flex justify-between items-center bg-white p-5 rounded-[2rem] shadow-sm border border-gray-100">
           <div className="flex flex-col text-left">
-            <h1 className="text-xl font-black italic text-gray-900 leading-tight uppercase">
+            <h1 className="text-xl font-black italic text-gray-900 leading-tight uppercase tracking-tighter">
               {user?.business_name || 'Mi Negocio'}
             </h1>
             <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide">
@@ -99,7 +118,7 @@ export default function VendorDashboard() {
           <div className="relative z-10 text-left">
            <p className="text-blue-100 text-[10px] font-black uppercase tracking-[0.1em] mt-1">Panel de Vendedor</p>
             <h2 className="text-2xl font-black">HOLA, {user?.full_name?.split(' ')[0].toUpperCase()}</h2>
-            <h1 className="text-lg-100 text-sm mt-1">¿Qué vamos a gestionar hoy?</h1>
+            <h1 className="text-sm mt-1 opacity-90 italic">¿Qué vamos a gestionar hoy?</h1>
           </div>
 
           <div className="relative z-10 text-right min-w-[90px]">
@@ -112,18 +131,24 @@ export default function VendorDashboard() {
 
         {/* Acciones principales del Vendor */}
         <div className="grid grid-cols-2 gap-4">
-          <button onClick={() => router.push('/vendor/inventario')} // Ruta hacia el inventario
-          className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm text-left active:scale-95 transition-all">
+          <button 
+            onClick={() => router.push('/vendor/inventario')} 
+            className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm text-left active:scale-95 transition-all"
+          >
             <div className="w-12 h-12 bg-orange-100 rounded-2xl flex items-center justify-center text-2xl mb-3">📦</div>
-            {/* Ahora muestra el total real de ese negocio */}
-            <p className="text-sm font-black uppercase text-gray-800">Mi Inventario</p>
+            <p className="text-sm font-black uppercase text-gray-800 italic">Mi Inventario</p>
             <p className="text-[10px] font-black uppercase text-orange-400">Total: {totalArticulos}</p>
           </button>
 
-          <button className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm text-left active:scale-95 transition-all">
+          <button 
+            onClick={() => router.push('/vendor/ordenes')} // RUTA CONECTADA
+            className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm text-left active:scale-95 transition-all"
+          >
             <div className="w-12 h-12 bg-green-100 rounded-2xl flex items-center justify-center text-2xl mb-3">📋</div>
-            <p className="text-sm font-black uppercase text-gray-800">Órdenes</p>
-            <p className="text-[10px] font-black uppercase text-green-400">Pendientes: 0</p>
+            <p className="text-sm font-black uppercase text-gray-800 italic">Órdenes</p>
+            <p className="text-[10px] font-black uppercase text-green-400">
+              Por asignar: {ordenesPendientes}
+            </p>
           </button>
         </div>
 
